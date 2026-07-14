@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
 <title>MUNDO SIMZ · Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
-:root{--gold:#ffd23f;--gold2:#ff9f1c;--green:#4ade80;--red:#ff5b5b;--cyan:#3fd0ff}
+:root{--gold:#ffd23f;--gold2:#ff9f1c;--green:#4ade80;--red:#ff5b5b}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#070a1c;color:#fff;font-family:'Press Start 2P',monospace;font-size:11px;line-height:2;
   padding:20px;max-width:980px;margin:0 auto}
@@ -21,7 +22,6 @@ input[type=file]{font-size:8px}
 input[type=checkbox]{width:auto}
 button{font-family:inherit;font-size:9px;cursor:pointer;border:0;border-radius:5px;padding:11px 14px;margin-top:12px;
   background:linear-gradient(180deg,var(--gold),var(--gold2));color:#2b1600}
-button.ghost{background:#2a3480;color:#fff}
 button.danger{background:#c0263f;color:#fff;padding:6px 8px;font-size:8px;margin:0}
 button:disabled{opacity:.5;cursor:not-allowed}
 .row{display:flex;gap:12px;flex-wrap:wrap}
@@ -30,7 +30,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .err{color:var(--red);font-size:8px}
 .pill{display:inline-block;font-size:8px;padding:5px 9px;border-radius:99px;background:#0b0f2a;border:1px solid #445;margin:0 6px 6px 0}
 .pill.on{border-color:var(--green);color:var(--green)}
-.pill.off{border-color:var(--red);color:var(--red)}
+.pill.off{border-color:var(--gold);color:var(--gold)}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 .tab{background:#1b2250;color:#9fb0ff;font-size:8px;padding:9px 10px;border-radius:5px;cursor:pointer;border:2px solid transparent}
 .tab.on{border-color:var(--gold);color:var(--gold)}
@@ -44,7 +44,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .lvl{display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid #2a3060;flex-wrap:wrap}
 .lvl .num{width:34px;font-size:8px;color:var(--gold);flex:none}
 .lvl input[type=text]{flex:1;min-width:120px;font-size:9px;padding:7px}
-.lvl .st{font-size:7px;width:110px;text-align:right;flex:none}
+.lvl .st{font-size:7px;width:120px;text-align:right;flex:none;color:#8f9bd6}
 .bar{height:10px;background:#0b0f2a;border:2px solid #445;border-radius:6px;overflow:hidden;margin-top:10px}
 .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold2),var(--gold))}
 .log{background:#0b0f2a;border:2px solid #334;border-radius:6px;padding:10px;font-size:8px;max-height:150px;
@@ -61,11 +61,12 @@ a{color:var(--gold)}
   <h1>MUNDO SIMZ</h1>
   <p class="sub">Panel de administración</p>
   <div class="card" style="margin-top:18px">
-    <h2>CÓDIGO DE ACCESO</h2>
-    <label>Código</label>
-    <input id="code" type="password" placeholder="••••••" autocomplete="off" autofocus>
-    <button id="codeBtn">ENTRAR</button>
-    <p id="codeMsg" class="err"></p>
+    <h2>CONTRASEÑA</h2>
+    <input id="pw" type="password" placeholder="••••••" autocomplete="current-password" autofocus>
+    <label><input type="checkbox" id="remember"> Recordar en este dispositivo</label>
+    <button id="loginBtn">ENTRAR</button>
+    <p id="loginMsg" class="err"></p>
+    <p class="sub" style="margin-top:14px">La contraseña se comprueba en el servidor. Este navegador nunca ve el token de GitHub.</p>
   </div>
 </div>
 
@@ -81,26 +82,23 @@ a{color:var(--gold)}
   <div class="card demo hidden" id="demoBox">
     <h2>MODO VISTA PREVIA</h2>
     <p class="sub">
-      Aún no hay token configurado, así que <b>nada se publica todavía</b> — pero puedes probar el panel completo:
-      sube imágenes, bórralas, bloquea y desbloquea niveles y edita la tienda. Todo funciona en pantalla.<br><br>
-      Cuando quieras activarlo de verdad, abre <b>admin.html</b> y rellena arriba del todo:<br>
-      <code>const GITHUB = { token: 'tu_token', repo: 'usuario/repositorio', branch: 'main' };</code>
+      Estás abriendo el panel sin servidor (archivo local o hosting sin funciones), así que <b>nada se publica</b>.
+      Puedes probarlo todo: subir páginas, borrarlas, bloquear y desbloquear niveles y editar la tienda.<br><br>
+      Para publicar de verdad, abre el panel desde tu dominio de Cloudflare Pages (ver <b>GUIA-DESPLIEGUE.md</b>).
     </p>
   </div>
 
-  <!-- ---------- NIVELES ---------- -->
   <div class="card">
     <h2>NIVELES / TEMPORADAS</h2>
-    <p class="sub">Cambia el nombre de cada nivel, bloquéalo o desbloquéalo, o déjalo libre para que se pueda jugar sin terminar el anterior.</p>
+    <p class="sub">Renombra cada nivel, bloquéalo o déjalo <b>libre</b> (jugable sin terminar el anterior). Los niveles sin páginas salen como PRÓXIMAMENTE.</p>
     <div id="levels"></div>
     <button id="saveLevels">PUBLICAR NIVELES</button>
     <span id="lvlMsg" class="ok"></span>
   </div>
 
-  <!-- ---------- PÁGINAS ---------- -->
   <div class="card">
     <h2>PÁGINAS DEL CÓMIC</h2>
-    <p class="sub">Elige el nivel, suelta las imágenes y se renombran solas (t3-01.jpg, t3-02.jpg…). Toca la ✕ de una miniatura para borrarla.</p>
+    <p class="sub">Elige el nivel, suelta las imágenes y se renombran solas (t3-01.jpg, t3-02.jpg…). Toca ✕ en una miniatura para borrarla.</p>
     <div class="tabs" id="tabs"></div>
     <label>Subir páginas (varias a la vez)</label>
     <input type="file" id="pageFiles" accept="image/*" multiple>
@@ -110,7 +108,6 @@ a{color:var(--gold)}
     <div class="grid" id="pageGrid"></div>
   </div>
 
-  <!-- ---------- TIENDA ---------- -->
   <div class="card">
     <h2>TIENDA · 10 PRODUCTOS</h2>
     <label>Texto de la tienda</label>
@@ -120,66 +117,30 @@ a{color:var(--gold)}
     <span id="shopMsg" class="ok"></span>
   </div>
 
-  <p class="sub">Tras publicar, GitHub Pages tarda 30-60 segundos en actualizarse. Después los usuarios ven lo nuevo al recargar.</p>
+  <p class="sub">Cada cambio queda versionado como un commit en GitHub. La web se reconstruye sola en 30-60 segundos.</p>
 </div>
 
 <script>
-/* ============================================================
-   ⬇⬇⬇  CONFIGURACIÓN — RELLENA ESTO CUANDO QUIERAS PUBLICAR  ⬇⬇⬇
-   Mientras 'token' esté vacío, el panel funciona en modo vista previa
-   (se ve y se prueba todo, pero no se sube nada).
-   ============================================================ */
-const GITHUB = {
-  token:  '',                       // ej: 'github_pat_xxxxxxxx'
-  repo:   '',                       // ej: 'riosdigitali-create/Simz'
-  branch: 'main'
-};
-const CODE = '262626';              // código de acceso al panel
-/* ============================================================ */
-
 const $ = s => document.querySelector(s);
-const API = 'https://api.github.com';
 const MAX_SEASONS = 20;
-const LIVE = !!(GITHUB.token && GITHUB.repo);
+let PW = '', LIVE = false, FILES = [], SEASON = 1, LEVELS = {}, PRODUCTS = null;
 
-let FILES = [];                     // archivos del repo (o simulados)
-let SEASON = 1, PRODUCTS = null, LEVELS = {};
-
-/* ---------- GitHub ---------- */
-async function gh(path, opts = {}) {
-  const r = await fetch(API + path, Object.assign({
-    headers: {
-      Authorization: 'Bearer ' + GITHUB.token,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28'
-    }
-  }, opts));
-  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).message || ('HTTP ' + r.status));
-  return r.status === 204 ? {} : r.json();
+/* ---------- API serverless (el token vive en el servidor) ---------- */
+async function api(route, data = {}) {
+  const r = await fetch('/api/' + route, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ password: PW, ...data })
+  });
+  const j = await r.json().catch(() => ({ ok: false, error: 'Respuesta no válida' }));
+  if (!j.ok) throw new Error(j.error || 'Error');
+  return j;
 }
 const b64 = f => new Promise((res, rej) => {
   const fr = new FileReader();
   fr.onload = () => res(String(fr.result).split(',')[1]);
   fr.onerror = rej; fr.readAsDataURL(f);
 });
-const b64text = t => btoa(unescape(encodeURIComponent(t)));
-
-async function putFile(path, content, message) {
-  if (!LIVE) { log('· (vista previa) se subiría ' + path); return; }
-  let sha;
-  try { sha = (await gh(`/repos/${GITHUB.repo}/contents/${path}?ref=${GITHUB.branch}`)).sha; } catch (e) {}
-  return gh(`/repos/${GITHUB.repo}/contents/${path}`, {
-    method: 'PUT',
-    body: JSON.stringify({ message, content, branch: GITHUB.branch, ...(sha ? { sha } : {}) })
-  });
-}
-async function delFile(f) {
-  if (!LIVE) { log('· (vista previa) se borraría ' + f.name); return; }
-  return gh(`/repos/${GITHUB.repo}/contents/${f.path}`, {
-    method: 'DELETE',
-    body: JSON.stringify({ message: 'Borrar ' + f.name, sha: f.sha, branch: GITHUB.branch })
-  });
-}
 function log(m, c = '') {
   const l = $('#log');
   l.innerHTML += `<div class="${c}">${m}</div>`;
@@ -187,44 +148,60 @@ function log(m, c = '') {
 }
 
 /* ---------- acceso ---------- */
-$('#codeBtn').onclick = async () => {
-  if ($('#code').value.trim() !== CODE) { $('#codeMsg').textContent = 'Código incorrecto'; return; }
-  sessionStorage.setItem('simz.code', '1');
+$('#loginBtn').onclick = async () => {
+  PW = $('#pw').value;
+  $('#loginMsg').textContent = '';
+  try {
+    const r = await api('login');
+    LIVE = true;
+    if ($('#remember').checked) localStorage.setItem('simz.pw', PW);
+    sessionStorage.setItem('simz.pw', PW);
+    $('#modo').textContent = '🟢 PUBLICANDO EN ' + r.repo;
+    $('#modo').className = 'pill on';
+    enter();
+  } catch (e) {
+    if (/no válida|Failed|NetworkError|Unexpected|Method|405|404/i.test(e.message)) {
+      LIVE = false;                                   // sin backend: vista previa
+      $('#modo').textContent = '🟡 VISTA PREVIA (sin servidor)';
+      $('#modo').className = 'pill off';
+      $('#demoBox').classList.remove('hidden');
+      enter();
+    } else {
+      $('#loginMsg').textContent = e.message;
+    }
+  }
+};
+$('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#loginBtn').click(); });
+$('#logout').onclick = e => {
+  e.preventDefault();
+  localStorage.removeItem('simz.pw'); sessionStorage.removeItem('simz.pw'); location.reload();
+};
+async function enter() {
   $('#login').classList.add('hidden');
   $('#panel').classList.remove('hidden');
-  $('#modo').textContent = LIVE ? '🟢 PUBLICANDO EN ' + GITHUB.repo : '🟡 VISTA PREVIA';
-  $('#modo').className = 'pill ' + (LIVE ? 'on' : 'off');
-  if (!LIVE) $('#demoBox').classList.remove('hidden');
   await refresh();
-};
-$('#code').addEventListener('keydown', e => { if (e.key === 'Enter') $('#codeBtn').click(); });
-$('#logout').onclick = e => { e.preventDefault(); sessionStorage.removeItem('simz.code'); location.reload(); };
-if (sessionStorage.getItem('simz.code')) { $('#code').value = CODE; $('#codeBtn').click(); }
+}
+(() => {
+  const saved = sessionStorage.getItem('simz.pw') || localStorage.getItem('simz.pw');
+  if (saved) { $('#pw').value = saved; $('#loginBtn').click(); }
+})();
 
-/* ---------- cargar estado ---------- */
+/* ---------- estado ---------- */
 async function refresh() {
   if (LIVE) {
-    FILES = await gh(`/repos/${GITHUB.repo}/contents?ref=${GITHUB.branch}`);
+    FILES = (await api('list')).files;
   } else if (!FILES.length) {
-    // vista previa: detecta las imágenes que ya están junto a este archivo
-    FILES = [];
     for (let n = 1; n <= MAX_SEASONS; n++) {
       for (let i = 1; i <= 60; i++) {
         const name = `t${n}-${String(i).padStart(2, '0')}.jpg`;
         const ok = await new Promise(r => { const im = new Image(); im.onload = () => r(1); im.onerror = () => r(0); im.src = name; });
         if (!ok) break;
-        FILES.push({ name, path: name, download_url: name, sha: '' });
+        FILES.push({ name, path: name, url: name, sha: '' });
       }
     }
   }
-  try {
-    const r = await fetch('temporadas.json?t=' + Date.now());
-    LEVELS = r.ok ? await r.json() : {};
-  } catch (e) { LEVELS = {}; }
-  try {
-    const r = await fetch('productos.json?t=' + Date.now());
-    PRODUCTS = r.ok ? await r.json() : null;
-  } catch (e) { PRODUCTS = null; }
+  try { const r = await fetch('temporadas.json?t=' + Date.now()); LEVELS = r.ok ? await r.json() : {}; } catch (e) { LEVELS = {}; }
+  try { const r = await fetch('productos.json?t=' + Date.now()); PRODUCTS = r.ok ? await r.json() : null; } catch (e) { PRODUCTS = null; }
   renderLevels(); renderTabs(); renderPages(); renderProducts();
 }
 const pagesOf = n => FILES
@@ -237,7 +214,7 @@ function renderLevels() {
   for (let n = 1; n <= MAX_SEASONS; n++) {
     const m = LEVELS[n] || {};
     const c = pagesOf(n).length;
-    const estado = m.locked ? '🔒 bloqueado' : (c ? '🟢 jugable' : '⏳ próximamente');
+    const estado = m.locked ? '🔒 bloqueado' : (c ? (m.free ? '🟢 libre' : '🟢 jugable') : '⏳ próximamente');
     const d = document.createElement('div');
     d.className = 'lvl';
     d.innerHTML = `
@@ -251,18 +228,16 @@ function renderLevels() {
 }
 $('#saveLevels').onclick = async () => {
   const out = {};
-  for (let n = 1; n <= MAX_SEASONS; n++) {
-    out[n] = {
-      title: document.querySelector(`[data-t="${n}"]`).value,
-      locked: document.querySelector(`[data-lock="${n}"]`).checked,
-      free: document.querySelector(`[data-free="${n}"]`).checked
-    };
-  }
+  for (let n = 1; n <= MAX_SEASONS; n++) out[n] = {
+    title: document.querySelector(`[data-t="${n}"]`).value,
+    locked: document.querySelector(`[data-lock="${n}"]`).checked,
+    free: document.querySelector(`[data-free="${n}"]`).checked
+  };
   LEVELS = out;
   $('#lvlMsg').textContent = 'Publicando…';
   try {
-    await putFile('temporadas.json', b64text(JSON.stringify(out, null, 2)), 'Actualizar niveles');
-    $('#lvlMsg').textContent = LIVE ? '✔ niveles publicados' : '✔ guardado (vista previa)';
+    if (LIVE) await api('save', { path: 'temporadas.json', data: out });
+    $('#lvlMsg').textContent = LIVE ? '✔ publicado · visible en ~1 min' : '✔ guardado (vista previa)';
   } catch (e) { $('#lvlMsg').textContent = '✖ ' + e.message; }
   renderLevels();
 };
@@ -284,13 +259,13 @@ function renderPages() {
   pagesOf(SEASON).forEach((f, i) => {
     const d = document.createElement('div');
     d.className = 'thumb';
-    d.innerHTML = `<img src="${f.download_url}" loading="lazy"><span class="n">${i + 1}</span><button class="danger x">✕</button>`;
+    d.innerHTML = `<img src="${f.url}" loading="lazy"><span class="n">${i + 1}</span><button class="danger x">✕</button>`;
     d.querySelector('.x').onclick = async () => {
       if (!confirm('¿Borrar ' + f.name + '?')) return;
       try {
-        await delFile(f);
+        if (LIVE) await api('delete', { path: f.path, sha: f.sha });
         FILES = FILES.filter(x => x.name !== f.name);
-        log('🗑 borrado ' + f.name, 'ok');
+        log('🗑 ' + f.name + (LIVE ? ' borrado' : ' (vista previa)'), 'ok');
         renderTabs(); renderPages(); renderLevels();
       } catch (e) { log('✖ ' + e.message, 'err'); }
     };
@@ -308,24 +283,21 @@ $('#uploadBtn').onclick = async () => {
     const name = `t${SEASON}-${String(next++).padStart(2, '0')}.${ext}`;
     try {
       log(`⬆ ${f.name} → ${name}`);
-      await putFile(name, await b64(f), 'Añadir ' + name);
-      FILES.push({ name, path: name, download_url: URL.createObjectURL(f), sha: '' });
+      if (LIVE) await api('upload', { path: name, content: await b64(f), message: 'Añadir ' + name });
+      FILES.push({ name, path: name, url: URL.createObjectURL(f), sha: '' });
       log('✔ ' + name, 'ok');
     } catch (e) { log('✖ ' + name + ': ' + e.message, 'err'); }
     $('#prog').style.width = Math.round((i + 1) / files.length * 100) + '%';
   }
   $('#pageFiles').value = '';
-  log(LIVE ? 'Listo. La web se actualiza en ~1 minuto.' : 'Listo (vista previa: no se subió nada).', 'ok');
+  log(LIVE ? 'Listo · la web se actualiza en ~1 minuto.' : 'Listo (vista previa: no se subió nada).', 'ok');
   $('#uploadBtn').disabled = false;
   renderTabs(); renderPages(); renderLevels();
 };
 
 /* ---------- tienda ---------- */
 function renderProducts() {
-  const data = PRODUCTS || {
-    intro: 'Coleccionables oficiales del Mundo Simz. Los artículos exclusivos se desbloquearán con las próximas temporadas.',
-    items: []
-  };
+  const data = PRODUCTS || { intro: 'Coleccionables oficiales del Mundo Simz. Los artículos exclusivos se desbloquearán con las próximas temporadas.', items: [] };
   const list = (data.items || []).slice(0, 10);
   while (list.length < 10) list.push({ name: 'Próximamente', price: '', image: '', locked: true, tag: '' });
   $('#shopIntro').value = data.intro;
@@ -360,7 +332,7 @@ $('#saveShop').onclick = async () => {
       if (f) {
         const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
         const name = `producto-${i + 1}.${ext}`;
-        await putFile(name, await b64(f), 'Imagen ' + name);
+        if (LIVE) await api('upload', { path: name, content: await b64(f), message: 'Foto ' + name });
         image = name;
       }
       items.push({
@@ -369,9 +341,10 @@ $('#saveShop').onclick = async () => {
         locked: get('locked').checked
       });
     }
-    await putFile('productos.json', b64text(JSON.stringify({ intro: $('#shopIntro').value, items }, null, 2)), 'Actualizar tienda');
-    PRODUCTS = { intro: $('#shopIntro').value, items };
-    $('#shopMsg').textContent = LIVE ? '✔ tienda publicada' : '✔ guardado (vista previa)';
+    const data = { intro: $('#shopIntro').value, items };
+    if (LIVE) await api('save', { path: 'productos.json', data });
+    PRODUCTS = data;
+    $('#shopMsg').textContent = LIVE ? '✔ tienda publicada · visible en ~1 min' : '✔ guardado (vista previa)';
   } catch (e) { $('#shopMsg').textContent = '✖ ' + e.message; }
   $('#saveShop').disabled = false;
 };
