@@ -86,14 +86,29 @@ export async function onRequest(context) {
       case 'login':
         return json({ ok: true, repo: repo(env), branch: branch(env) });
 
-      /* --- listar archivos publicados --- */
+      /* --- listar archivos publicados ---
+         Usa la Git Trees API, NO /contents: /contents devuelve como mucho 1000
+         entradas y no pagina, así que con muchas páginas cortaba la lista en
+         silencio. Como el panel publica temporadas.json a partir de esta lista,
+         una lista corta significaba borrar páginas reales del cómic.
+         Trees aguanta ~100.000 entradas de una sola llamada. */
       case 'list': {
-        const files = await gh(env, `/repos/${repo(env)}/contents?ref=${branch(env)}`);
+        const t = await gh(env, `/repos/${repo(env)}/git/trees/${branch(env)}?recursive=1`);
+        if (t.truncated) {
+          return json({ ok: false, error: 'El repositorio es demasiado grande para listarlo de una vez' }, 500);
+        }
+        const raw = `https://raw.githubusercontent.com/${repo(env)}/${branch(env)}/`;
         return json({
           ok: true,
-          files: (Array.isArray(files) ? files : [])
-            .filter(f => f.type === 'file')
-            .map(f => ({ name: f.name, path: f.path, sha: f.sha, url: f.download_url }))
+          files: (Array.isArray(t.tree) ? t.tree : [])
+            // solo archivos en la raíz, que es donde viven las páginas
+            .filter(f => f.type === 'blob' && !f.path.includes('/'))
+            .map(f => ({
+              name: f.path,
+              path: f.path,
+              sha: f.sha,
+              url: raw + encodeURIComponent(f.path)
+            }))
         });
       }
 
