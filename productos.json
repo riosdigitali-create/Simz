@@ -1,0 +1,85 @@
+{
+  "intro": "Coleccionables oficiales del Mundo Simz. Los artículos exclusivos se desbloquearán con las próximas temporadas.",
+  "items": [
+    {
+      "id": "p1",
+      "name": "Próximamente",
+      "price": "",
+      "tag": "",
+      "image": "",
+      "locked": true
+    },
+    {
+      "id": "p2",
+      "name": "Próximamente",
+      "price": "",
+      "tag": "",
+      "image": "",
+      "locked": true
+    },
+    {
+      "id": "p3",
+      "name": "Próximamente",
+      "price": "",
+      "tag": "",
+      "image": "",
+      "locked": true
+    },
+    {
+      "id": "p4",
+      "name": "Próximamente",
+      "price": "",
+      "tag": "",
+      "image": "",
+      "locked": true
+    },
+    {
+      "id": "p5",
+      "name": "Próximamente",
+      "price": "",
+      "tag": "",
+      "image": "",
+      "locked": true
+    },
+    {
+      "id": "p6",
+      "name": "Próximamente",
+      "price": "",
+      "tag": "",
+      "image": "",
+      "locked": true
+    },
+    {
+      "id": "p7",
+      "name": "Próximamente",
+      "price": "",
+      "tag": "",
+      "image": "",
+      "locked": true
+    },
+    {
+      "id": "p8",
+      "name": "Próximamente",
+      "price": "",
+      "tag": "",
+      "image": "",
+      "locked": true
+    },
+    {
+      "id": "p9",
+      "name": "Próximamente",
+      "price": "",
+      "tag": "",
+      "image": "",
+      "locked": true
+    },
+    {
+      "id": "p10",
+      "name": "Próximamente",
+      "price": "",
+      "tag": "",
+      "image": "",
+      "locked": true
+    }
+  ]
+}
