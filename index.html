@@ -1462,23 +1462,39 @@ const World = (() => {
     const r = await Promise.all(candidates(n, i).map(async p => (await exists(p)) ? p : null));
     return r.find(Boolean) || null;
   }
+  let REMOTE = {};                 // temporadas.json publicado desde el panel
+
+  /* Lista base de una temporada.
+     Si el panel ya publicó su lista en temporadas.json, ESA manda: es la única
+     que refleja los borrados. El MANIFEST solo sirve de respaldo mientras
+     temporadas.json todavía no existe (primer despliegue). */
+  function baseList(n) {
+    const r = REMOTE[n];
+    if (r && Array.isArray(r.pages)) return r.pages.slice();
+    return (MANIFEST[n] || []).slice();
+  }
+  /* número de página dentro del nombre: t1-07.jpg -> 7 · temporada-1/07.jpg -> 7 */
+  const pageIndex = p => { const m = String(p).match(/(\d+)\.[a-z]+$/i); return m ? +m[1] : 0; };
+
   async function scanSeason(n) {
-    const pages = (MANIFEST[n] || []).slice();
+    const pages = baseList(n);
     // temporada aún sin páginas: basta con mirar si existe la primera
     if (!pages.length) {
       const first = await findPage(n, 1);
       if (!first) return [];
       pages.push(first);
     }
-    let i = pages.length + 1, miss = 0;
+    // sondea a partir del número más alto ya conocido, no de la cantidad:
+    // si se borró una página intermedia la lista es más corta que su último índice.
+    const seen = new Set(pages);
+    let i = pages.reduce((mx, p) => Math.max(mx, pageIndex(p)), 0) + 1, miss = 0;
     while (i <= 300 && miss < 2) {                 // solo busca páginas NUEVAS
       const p = await findPage(n, i);
-      if (p) { pages.push(p); miss = 0; } else miss++;
+      if (p && !seen.has(p)) { pages.push(p); seen.add(p); miss = 0; } else miss++;
       i++;
     }
     return pages;
   }
-  let REMOTE = {};                 // temporadas.json publicado desde el panel
 
   function buildSeason(n, pages) {
     const meta = Object.assign({}, cfg.seasons[n] || {}, REMOTE[n] || {});
@@ -1498,7 +1514,7 @@ const World = (() => {
     return all.map((pages, k) => buildSeason(k + 1, pages));
   }
   function quickSeasons() {
-    return Array.from({ length: MAX_SEASONS }, (_, k) => buildSeason(k + 1, (MANIFEST[k + 1] || []).slice()));
+    return Array.from({ length: MAX_SEASONS }, (_, k) => buildSeason(k + 1, baseList(k + 1)));
   }
 
   /* ---------- estado ---------- */

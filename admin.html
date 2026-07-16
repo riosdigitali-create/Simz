@@ -226,18 +226,38 @@ function renderLevels() {
     box.appendChild(d);
   }
 }
-$('#saveLevels').onclick = async () => {
+/* Construye temporadas.json: títulos, candados y —lo importante— la LISTA DE
+   PÁGINAS de cada temporada. La web lee esa lista, así que un borrado aquí
+   desaparece de verdad de index.html. Lee los inputs si están pintados; si no
+   (subida/borrado en segundo plano), conserva lo que ya había en LEVELS. */
+function levelsPayload() {
   const out = {};
-  for (let n = 1; n <= MAX_SEASONS; n++) out[n] = {
-    title: document.querySelector(`[data-t="${n}"]`).value,
-    locked: document.querySelector(`[data-lock="${n}"]`).checked,
-    free: document.querySelector(`[data-free="${n}"]`).checked
-  };
+  for (let n = 1; n <= MAX_SEASONS; n++) {
+    const m = LEVELS[n] || {};
+    const t = document.querySelector(`[data-t="${n}"]`);
+    const lk = document.querySelector(`[data-lock="${n}"]`);
+    const fr = document.querySelector(`[data-free="${n}"]`);
+    out[n] = {
+      title: t ? t.value : (m.title || 'Temporada ' + n),
+      locked: lk ? lk.checked : !!m.locked,
+      free: fr ? fr.checked : !!m.free,
+      pages: pagesOf(n).map(f => f.name)
+    };
+  }
+  return out;
+}
+/* Publica temporadas.json. Devuelve true si llegó al repo. */
+async function publishLevels() {
+  const out = levelsPayload();
   LEVELS = out;
+  if (LIVE) await api('save', { path: 'temporadas.json', data: out });
+  return LIVE;
+}
+$('#saveLevels').onclick = async () => {
   $('#lvlMsg').textContent = 'Publicando…';
   try {
-    if (LIVE) await api('save', { path: 'temporadas.json', data: out });
-    $('#lvlMsg').textContent = LIVE ? '✔ publicado · visible en ~1 min' : '✔ guardado (vista previa)';
+    const live = await publishLevels();
+    $('#lvlMsg').textContent = live ? '✔ publicado · visible en ~1 min' : '✔ guardado (vista previa)';
   } catch (e) { $('#lvlMsg').textContent = '✖ ' + e.message; }
   renderLevels();
 };
@@ -265,7 +285,9 @@ function renderPages() {
       try {
         if (LIVE) await api('delete', { path: f.path, sha: f.sha });
         FILES = FILES.filter(x => x.name !== f.name);
-        log('🗑 ' + f.name + (LIVE ? ' borrado' : ' (vista previa)'), 'ok');
+        // sin esto la web seguiría mostrando la página borrada
+        await publishLevels();
+        log('🗑 ' + f.name + (LIVE ? ' borrado · la web se actualiza en ~1 min' : ' (vista previa)'), 'ok');
         renderTabs(); renderPages(); renderLevels();
       } catch (e) { log('✖ ' + e.message, 'err'); }
     };
@@ -276,7 +298,10 @@ $('#uploadBtn').onclick = async () => {
   const files = [...$('#pageFiles').files];
   if (!files.length) { log('Elige imágenes primero.', 'err'); return; }
   $('#uploadBtn').disabled = true;
-  let next = pagesOf(SEASON).length + 1;
+  // numerar a partir del índice más alto existente, NO de la cantidad: si se
+  // borró una página intermedia, contar sobrescribiría la última.
+  const idx = p => { const m = p.match(/-(\d+)\./); return m ? +m[1] : 0; };
+  let next = pagesOf(SEASON).reduce((mx, f) => Math.max(mx, idx(f.name)), 0) + 1;
   for (let i = 0; i < files.length; i++) {
     const f = files[i];
     const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
@@ -290,6 +315,7 @@ $('#uploadBtn').onclick = async () => {
     $('#prog').style.width = Math.round((i + 1) / files.length * 100) + '%';
   }
   $('#pageFiles').value = '';
+  try { await publishLevels(); } catch (e) { log('✖ índice: ' + e.message, 'err'); }
   log(LIVE ? 'Listo · la web se actualiza en ~1 minuto.' : 'Listo (vista previa: no se subió nada).', 'ok');
   $('#uploadBtn').disabled = false;
   renderTabs(); renderPages(); renderLevels();
