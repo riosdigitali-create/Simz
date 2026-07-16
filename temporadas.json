@@ -1,0 +1,147 @@
+{
+  "1": {
+    "title": "Temporada 1",
+    "locked": false,
+    "free": false,
+    "pages": [
+      "t1-02.jpg",
+      "t1-03.jpg",
+      "t1-04.jpg",
+      "t1-05.jpg",
+      "t1-06.jpg",
+      "t1-07.jpg",
+      "t1-08.jpg",
+      "t1-09.jpg",
+      "t1-10.jpg",
+      "t1-11.jpg",
+      "t1-12.jpg",
+      "t1-13.jpg",
+      "t1-14.jpg",
+      "t1-15.jpg"
+    ]
+  },
+  "2": {
+    "title": "Temporada 2",
+    "locked": false,
+    "free": false,
+    "pages": [
+      "t2-01.jpg",
+      "t2-02.jpg",
+      "t2-03.jpg",
+      "t2-04.jpg",
+      "t2-05.jpg",
+      "t2-06.jpg",
+      "t2-07.jpg",
+      "t2-08.jpg",
+      "t2-09.jpg"
+    ]
+  },
+  "3": {
+    "title": "Temporada 3",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "4": {
+    "title": "Temporada 4",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "5": {
+    "title": "Temporada 5",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "6": {
+    "title": "Temporada 6",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "7": {
+    "title": "Temporada 7",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "8": {
+    "title": "Temporada 8",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "9": {
+    "title": "Temporada 9",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "10": {
+    "title": "Temporada 10",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "11": {
+    "title": "Temporada 11",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "12": {
+    "title": "Temporada 12",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "13": {
+    "title": "Temporada 13",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "14": {
+    "title": "Temporada 14",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "15": {
+    "title": "Temporada 15",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "16": {
+    "title": "Temporada 16",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "17": {
+    "title": "Temporada 17",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "18": {
+    "title": "Temporada 18",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "19": {
+    "title": "Temporada 19",
+    "locked": false,
+    "free": false,
+    "pages": []
+  },
+  "20": {
+    "title": "Temporada 20",
+    "locked": false,
+    "free": false,
+    "pages": []
+  }
+}
