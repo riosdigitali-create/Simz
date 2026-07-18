@@ -126,5 +126,14 @@ fetch('productos.json?t=' + Date.now())
   .then(render)
   .catch(() => render(DEFAULTS));
 </script>
+<!-- crédito discreto: enlaza a la marca que hizo el sitio -->
+<a href="https://zivcreativo.shop" target="_blank" rel="noopener noreferrer" class="ziv-credito">página creada por Ziv Creativo</a>
+<style>
+.ziv-credito{position:fixed;bottom:6px;right:10px;z-index:6;font-family:var(--pix,monospace);
+  font-size:8px;letter-spacing:.5px;color:#fff;opacity:.3;text-decoration:none;
+  background:rgba(0,0,0,.4);padding:4px 8px;border-radius:5px;transition:opacity .2s;backdrop-filter:blur(2px)}
+.ziv-credito:hover{opacity:1;color:var(--gold,#ffd23f)}
+@media(max-width:640px){.ziv-credito{font-size:7px;padding:3px 6px;bottom:4px;right:6px}}
+</style>
 </body>
 </html>
