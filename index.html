@@ -43,6 +43,9 @@ img{image-rendering:pixelated}
   display:inline-flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);
 }
 .iconbtn:hover{border-color:var(--gold);color:var(--gold)}
+/* acceso al panel: visible pero discreto (atenuado hasta que pasas por encima) */
+.admin-link{opacity:.5}
+.admin-link:hover{opacity:1}
 
 /* ---------- boot ---------- */
 .screen{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
@@ -330,6 +333,7 @@ img{image-rendering:pixelated}
       <button class="iconbtn" id="btnDayNight" title="Día / Noche">☀</button>
       <button class="iconbtn" id="btnFull" title="Pantalla completa">⛶</button>
       <button class="iconbtn" id="btnSeasons" title="Temporadas">☰</button>
+      <a class="iconbtn admin-link" href="admin.html" title="Panel de administración" style="text-decoration:none">⚙</a>
     </div>
   </div>
 
