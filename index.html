@@ -126,8 +126,15 @@ img{image-rendering:pixelated}
   scroll-behavior:smooth;background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);background-size:16px 16px}
 /* ¡importante! los bloques NO deben encogerse: cada página conserva su alto real */
 .pages{display:block;width:100%;margin:0 auto}
-.page{position:relative;max-width:min(880px,100%);width:100%;margin:0 auto 26px;flex:none;
-  transition:opacity .4s ease;opacity:1}
+/* --ancho lo fija applyZoom() en el contenedor: así el zoom es un cambio de
+   una variable CSS y no un bucle sobre miles de nodos. */
+.pages{--ancho:880px}
+.page{position:relative;max-width:min(var(--ancho),100%);width:100%;margin:0 auto 26px;flex:none;
+  transition:opacity .4s ease;opacity:1;
+  /* el hueco reserva su alto aunque todavía no tenga imagen (virtualización) */
+  background:#0d0d16;border-radius:4px;
+  /* el navegador se salta el pintado de lo que está fuera de pantalla */
+  content-visibility:auto}
 .page:last-child{margin-bottom:0}
 .page .err{display:block;padding:26px;text-align:center;font-size:9px;line-height:2;color:#ff6b6b;
   border:2px dashed #ff6b6b;border-radius:6px;background:#1a0d0d;word-break:break-all}
@@ -135,6 +142,15 @@ img{image-rendering:pixelated}
 .page img{width:100%;height:auto;display:block;max-width:100%;border-radius:4px;background:#111;
   box-shadow:0 18px 50px rgba(0,0,0,.7),0 0 0 3px rgba(255,255,255,.12)}
 .page .num{position:absolute;bottom:-20px;right:2px;font-size:8px;color:#6d7bbf}
+/* botón "cargar siguientes 10" al final de cada tanda + placeholder mientras
+   la imagen no ha cargado (skeleton con brillo que recorre) */
+.tanda-mas{display:block;margin:30px auto 10px;font-size:11px;padding:16px 22px;cursor:pointer}
+.tanda-fin{text-align:center;margin:34px auto 6px;font-size:10px;letter-spacing:2px;color:var(--gold)}
+.page:not(.loaded){background:
+  linear-gradient(100deg,#0d0d16 30%,#1c1c2e 50%,#0d0d16 70%) #0d0d16;
+  background-size:220% 100%;animation:sk 1.2s ease-in-out infinite}
+@keyframes sk{0%{background-position:180% 0}100%{background-position:-80% 0}}
+@media(prefers-reduced-motion:reduce){.page:not(.loaded){animation:none}}
 .navbtn{font-family:var(--pix);font-size:14px;background:rgba(255,255,255,.08);color:#fff;
   border:2px solid rgba(255,255,255,.25);border-radius:8px;padding:12px 16px;cursor:pointer}
 .navbtn:hover{border-color:var(--gold);color:var(--gold)}
@@ -308,6 +324,7 @@ img{image-rendering:pixelated}
     </div>
     <div class="hud-right">
       <a class="iconbtn" href="tienda.html" title="Tienda Simz" style="text-decoration:none">🛒</a>
+      <a class="iconbtn" href="personajes.html" title="Personajes" style="text-decoration:none">🎭</a>
       <button class="iconbtn" id="btnAvatar" title="Cambiar personaje">🦸</button>
       <button class="iconbtn" id="btnSound" title="Sonido">🔊</button>
       <button class="iconbtn" id="btnDayNight" title="Día / Noche">☀</button>
@@ -409,9 +426,9 @@ img{image-rendering:pixelated}
       <button class="pixbtn" id="adminSave">GUARDAR</button>
       <button class="pixbtn ghost" id="adminReset">REINICIAR PROGRESO</button>
     </footer>
-    <p class="adm-sub" style="margin-top:14px">Para añadir páginas: copia las imágenes dentro de la carpeta
-    <b>temporada-N</b> (nómbralas 01.jpg, 02.jpg…) y recarga con F5. Para una temporada nueva, crea la carpeta
-    <b>temporada-3</b>, <b>temporada-4</b>… y aparecerá sola.</p>
+    <p class="adm-sub" style="margin-top:14px">Para añadir o borrar páginas usa el panel de administración
+    (<b>/admin.html</b>): eliges el nivel, sueltas las imágenes y se publican solas. Este panel es solo para
+    los títulos, los candados y el progreso.</p>
   </div>
 </div>
 
@@ -1462,7 +1479,52 @@ const World = (() => {
     const r = await Promise.all(candidates(n, i).map(async p => (await exists(p)) ? p : null));
     return r.find(Boolean) || null;
   }
+  /* ---------- medición de audiencia ----------
+     Cloudflare Web Analytics: gratis e ilimitado, ya estás en Cloudflare, y no
+     usa cookies ni huella digital. Eso importa por dos motivos prácticos:
+       · no necesitas banner de consentimiento (RGPD),
+       · no lo bloquean los bloqueadores de anuncios, así que los números que
+         ves son reales — con Google Analytics pierdes ~30-40% del tráfico.
+
+     Da visitas, páginas vistas, visitantes únicos, país, dispositivo y sobre
+     todo REFERRER: cuando pegues el link en otra web, ahí verás cuánta gente
+     llegó desde ella. Que es justo lo que buscas.
+
+     Instalación: Cloudflare → Analytics & Logs → Web Analytics → Add a site.
+     Copia el token y pégalo abajo. Mientras esté vacío, no se carga nada.  */
+  const CF_ANALYTICS_TOKEN = '';   // ← pegar aquí el token de Cloudflare
+
+  (function medir() {
+    if (!CF_ANALYTICS_TOKEN) return;
+    const s = document.createElement('script');
+    s.defer = true;
+    s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+    s.setAttribute('data-cf-beacon', JSON.stringify({ token: CF_ANALYTICS_TOKEN }));
+    document.head.appendChild(s);
+  })();
+
   let REMOTE = {};                 // temporadas.json publicado desde el panel
+
+  /* ---------- de dónde se sirve cada página ----------
+     Hay dos almacenes y el nombre dice cuál, sin necesidad de consultar nada:
+
+       t1-07.jpg     → 2-3 dígitos → el propio sitio (las que ya estaban)
+       t1-0007.webp  → 4 dígitos   → R2 (bucket público, no pasa por el repo)
+
+     Así las fotos que el cliente ya había subido se siguen viendo exactamente
+     igual que antes: no se migra nada, no se pierde nada, y las nuevas conviven
+     con ellas en el mismo nivel y en orden.
+
+     El dominio de R2 NO se escribe a mano aquí: lo publica el panel dentro de
+     temporadas.json (clave `_r2`), leyéndolo de la variable R2_PUBLIC_URL de
+     Cloudflare. Así no hay dos sitios que puedan quedar desincronizados —el
+     error clásico: el panel enseña las miniaturas bien mientras la web pública
+     sirve 404 porque a alguien se le olvidó copiar la URL al HTML.
+
+     Si no hay `_r2`, todo se sirve del sitio como siempre (degradación elegante). */
+  let R2_BASE = '';
+  const esDeR2 = p => /^t\d{1,2}-\d{4}\.[a-z]+$/i.test(String(p));
+  const urlDe = p => (esDeR2(p) && R2_BASE) ? `${R2_BASE}/${encodeURIComponent(p)}` : p;
 
   /* Lista base de una temporada.
      Si el panel ya publicó su lista en temporadas.json, ESA manda: es la única
@@ -1476,19 +1538,24 @@ const World = (() => {
   /* número de página dentro del nombre: t1-07.jpg -> 7 · temporada-1/07.jpg -> 7 */
   const pageIndex = p => { const m = String(p).match(/(\d+)\.[a-z]+$/i); return m ? +m[1] : 0; };
 
+  /* Sondear = pedir t{n}-01.jpg, t{n}-02.jpg… a ver cuáles responden.
+     Era la forma de descubrir páginas subidas a mano al repo, pero cuesta
+     carísimo: 20 niveles × hasta 300 páginas × 2 rutas × 3 extensiones son
+     miles de peticiones 404 ANTES de poder pintar el mapa. Eso es lo que hacía
+     que la web tardara tanto en abrir.
+
+     Ya no hace falta: el panel publica temporadas.json en cada subida y cada
+     borrado, así que esa lista es completa y autoritativa. Solo se sondea el
+     caso en el que NO hay lista publicada (primer despliegue), y ahí se para en
+     seco al primer hueco. */
   async function scanSeason(n) {
-    const pages = baseList(n);
-    // temporada aún sin páginas: basta con mirar si existe la primera
-    if (!pages.length) {
-      const first = await findPage(n, 1);
-      if (!first) return [];
-      pages.push(first);
-    }
-    // sondea a partir del número más alto ya conocido, no de la cantidad:
-    // si se borró una página intermedia la lista es más corta que su último índice.
+    const publicada = REMOTE[n] && Array.isArray(REMOTE[n].pages);
+    if (publicada) return REMOTE[n].pages.slice();     // 0 peticiones
+
+    const pages = (MANIFEST[n] || []).slice();
     const seen = new Set(pages);
     let i = pages.reduce((mx, p) => Math.max(mx, pageIndex(p)), 0) + 1, miss = 0;
-    while (i <= 300 && miss < 2) {                 // solo busca páginas NUEVAS
+    while (i <= 60 && miss < 2) {
       const p = await findPage(n, i);
       if (p && !seen.has(p)) { pages.push(p); seen.add(p); miss = 0; } else miss++;
       i++;
@@ -1539,7 +1606,7 @@ const World = (() => {
       const el = document.createElement('div');
       el.className = 'season-card' + (open ? '' : ' locked') + (s.completed ? ' done' : '');
       el.innerHTML = `${open && s.cover
-          ? `<div class="thumb" style="background-image:url('${s.cover}')"></div>`
+          ? `<div class="thumb" style="background-image:url('${urlDe(s.cover)}')"></div>`
           : `<div class="thumb">${s.status === 'coming' ? '❓' : '🔒'}</div>`}
         <div class="meta">
           <div class="lvl">NIVEL ${s.number}${s.completed ? ' ✔' : ''}</div>
@@ -1584,29 +1651,86 @@ const World = (() => {
     $('#reader').classList.remove('hidden');
     $('#readerStage').scrollTop = 0;
     $('#readerTitle').textContent = `${s.title.toUpperCase()} · ${s.pageCount} PÁGINAS`;
-    const pages = $('#pages'); pages.innerHTML = '';
-    s.pages.forEach((src, i) => {
-      const d = document.createElement('div');
-      d.className = 'page'; d.dataset.i = i;
-      d.innerHTML = `<img src="${src}" alt="Página ${i + 1}">
-                     <span class="num">${i + 1} / ${s.pageCount}</span>`;
-      const im = d.querySelector('img');
-      im.addEventListener('load', () => {
-        d.classList.add('loaded');
-        if (!im.naturalWidth) fail(d, im, src, 'imagen vacía');
-      });
-      im.addEventListener('error', () => fail(d, im, src, 'archivo no encontrado'));
-      pages.appendChild(d);
-    });
-    applyZoom(); observePages();
+    /* Se crean los HUECOS de todas las páginas, pero NINGUNA imagen.
+       Antes se montaban los <img> de golpe con src: abrir un nivel de 1000
+       páginas lanzaba 1000 descargas simultáneas y dejaba 1000 bitmaps
+       descomprimidos en RAM (un JPG de 200 KB ocupa ~12 MB ya decodificado:
+       1000 páginas ≈ 12 GB). De ahí los cuelgues. Ahora el <img> se crea al
+       acercarse la página y se destruye al alejarse: la memoria se mantiene
+       plana sin importar si el nivel tiene 10 páginas o 5000. */
     SimzAudio.music('reader');
-    // muestra la página 1 y solo entonces empieza a contar el progreso
-    setProgressUI(0);
+    // Lectura por TANDAS: no se pintan las 1000 páginas de golpe (eso mandaba
+    // al usuario al fondo y dejaba miles de huecos cargando a la vez). Se
+    // muestran POR_TANDA páginas empezando desde arriba, y un botón carga las
+    // siguientes. Se retoma en la tanda donde el usuario se quedó.
     const lp = save.lastPage[s.number] || 0;
-    setTimeout(() => {
-      if (lp > 0 && lp < s.pageCount - 1) scrollToPage(lp);
-      setTimeout(() => { tracking = true; }, 900);
-    }, 400);
+    renderTanda(Math.floor(lp / POR_TANDA), false);
+  }
+
+  /* ---------- lectura por tandas ----------
+     El lector muestra POR_TANDA páginas a la vez. Dentro de la tanda sigue
+     habiendo scroll y virtualización (montar/desmontar por viewport), así que
+     la memoria se mantiene plana aunque la tanda sean 10 imágenes largas. */
+  const POR_TANDA = 10;
+  let tanda = 0;
+
+  function totalTandas() { return current ? Math.max(1, Math.ceil(current.pageCount / POR_TANDA)) : 1; }
+
+  function renderTanda(t, sfx = true) {
+    if (!current) return;
+    const tt = totalTandas();
+    tanda = Math.max(0, Math.min(t, tt - 1));
+    tracking = false;
+
+    const ini = tanda * POR_TANDA;
+    const fin = Math.min(ini + POR_TANDA, current.pageCount);
+
+    if (obs) { obs.disconnect(); obs = null; }
+    const pages = $('#pages');
+    document.querySelectorAll('.page').forEach(desmontar);
+    pages.innerHTML = '';
+
+    const frag = document.createDocumentFragment();
+    for (let i = ini; i < fin; i++) {
+      const d = document.createElement('div');
+      d.className = 'page'; d.dataset.i = i; d.dataset.src = urlDe(current.pages[i]);
+      d.style.aspectRatio = '2 / 3';   // alto reservado: evita saltos al cargar
+      d.innerHTML = `<span class="num">${i + 1} / ${current.pageCount}</span>`;
+      frag.appendChild(d);
+    }
+    // botón al final de la tanda: cargar las siguientes
+    if (fin < current.pageCount) {
+      const b = document.createElement('button');
+      b.className = 'pixbtn tanda-mas';
+      const quedan = Math.min(POR_TANDA, current.pageCount - fin);
+      b.textContent = `CARGAR SIGUIENTES ${quedan} ▼`;
+      b.onclick = () => renderTanda(tanda + 1);
+      frag.appendChild(b);
+    } else {
+      const finMsg = document.createElement('div');
+      finMsg.className = 'tanda-fin';
+      finMsg.textContent = '— FIN DE LA TEMPORADA —';
+      frag.appendChild(finMsg);
+    }
+    pages.appendChild(frag);
+
+    applyZoom(); observePages();
+    $('#readerStage').scrollTop = 0;     // cada tanda empieza ARRIBA
+    if (sfx) SimzAudio.sfxPage();
+    setTandaUI();
+
+    // marca progreso y, si es la última tanda, cuenta como completada
+    setProgressUI(ini);
+    save.lastPage[current.number] = ini; persist();
+    // la temporada se marca completa cuando el usuario LLEGA al final de la
+    // última tanda (lo detecta updateProgress al scrollear), no solo por abrirla
+    setTimeout(() => { tracking = true; }, 700);
+  }
+
+  function setTandaUI() {
+    const tt = totalTandas();
+    $('#prevPage').disabled = tanda <= 0;
+    $('#nextPage').disabled = tanda >= tt - 1;
   }
   function fail(d, im, src, why) {
     d.classList.add('loaded'); if (im) im.remove();
@@ -1614,14 +1738,88 @@ const World = (() => {
   }
   function closeReader() {
     $('#reader').classList.add('hidden');
+    // soltar de verdad: sin desconectar el observer y vaciar el contenedor, las
+    // imágenes del nivel anterior siguen en memoria al abrir el siguiente, y
+    // saltando entre niveles la memoria solo sube.
+    if (obs) { obs.disconnect(); obs = null; }
+    document.querySelectorAll('.page').forEach(desmontar);
+    $('#pages').innerHTML = '';
+    $('#readerStage').onscroll = null;
     World.pause(false); World.resetZoom();
     SimzAudio.music('map'); current = null;
   }
 
+  /* ---------- virtualización del lector ----------
+     Solo las páginas cercanas al viewport tienen <img>. El IntersectionObserver
+     con rootMargin monta unas cuantas por delante y por detrás, así que al
+     scrollear normal la imagen ya está lista y el usuario no ve el hueco. */
+  let obs = null;
+  const MARGEN = '250% 0px';    // ~2 pantallas de precarga arriba y abajo
+
+  function montar(d) {
+    if (d.dataset.montada === '1') return;       // ya montada (aunque falle)
+    d.dataset.montada = '1';
+    const src = d.dataset.src;
+    const im = new Image();
+    im.alt = 'Página ' + (+d.dataset.i + 1);
+    im.decoding = 'async';
+    // onload/onerror (no addEventListener): así al desmontar basta con
+    // ponerlos a null y no queda ningún handler suelto.
+    im.onload = () => {
+      d.classList.add('loaded');
+      if (!im.naturalWidth) return fail(d, im, src, 'imagen vacía');
+      // ya sabemos la proporción real: se sustituye la estimada para que el
+      // scroll no dé un salto al cambiar el alto del hueco
+      d.style.aspectRatio = im.naturalWidth + ' / ' + im.naturalHeight;
+    };
+    im.onerror = () => fail(d, im, src, 'archivo no encontrado');
+    im.src = src;
+    d.insertBefore(im, d.firstChild);
+  }
+
+  function desmontar(d) {
+    if (d.dataset.montada !== '1') return;
+    d.dataset.montada = '0';
+    // el aviso de error se limpia SIEMPRE, aunque ya no haya <img>: fail() la
+    // elimina, y si aquí saliéramos antes por no encontrarla, al volver a
+    // entrar en pantalla se apilaría otra caja roja en cada pasada de scroll.
+    const err = d.querySelector('.err');
+    if (err) err.remove();
+    d.classList.remove('loaded');
+
+    const im = d.querySelector('img');
+    if (!im) return;
+    // desconectar los handlers ANTES de tocar src: vaciar el src dispara un
+    // evento `error` en el navegador, que llamaría a fail() y pintaría una caja
+    // roja en una página que se estaba descartando y había cargado bien.
+    im.onload = im.onerror = null;
+    // removeAttribute (no src='') le dice al navegador que puede liberar el
+    // bitmap decodificado. Sin esto la memoria no baja al alejarse.
+    im.removeAttribute('src');
+    im.remove();
+  }
+
   function observePages() {
-    document.querySelectorAll('.page').forEach(p => p.classList.add('in'));
+    if (obs) obs.disconnect();
+    obs = new IntersectionObserver(entradas => {
+      entradas.forEach(e => {
+        e.target.classList.toggle('in', e.isIntersecting);
+        if (e.isIntersecting) montar(e.target); else desmontar(e.target);
+      });
+    }, { root: $('#readerStage'), rootMargin: MARGEN });
+    document.querySelectorAll('.page').forEach(p => obs.observe(p));
+
     const stage = $('#readerStage');
-    stage.onscroll = () => { if (tracking) updateProgress(currentPageIndex()); };
+    // el scroll dispara muchísimo; con rAF se calcula una vez por fotograma
+    let pendiente = false;
+    stage.onscroll = () => {
+      if (pendiente) return;
+      pendiente = true;
+      requestAnimationFrame(() => {
+        pendiente = false;
+        if (tracking) updateProgress(currentPageIndex());
+      });
+    };
   }
   function setProgressUI(i) {
     if (!current) return;
@@ -1645,14 +1843,19 @@ const World = (() => {
   function currentPageIndex() {
     const stage = $('#readerStage').getBoundingClientRect();
     let best = 0, bd = 1e9;
-    document.querySelectorAll('.page').forEach(p => {
+    // SOLO las páginas visibles (.in), no las 1000: cada getBoundingClientRect
+    // fuerza al navegador a recalcular el layout, y hacerlo mil veces por
+    // fotograma era lo que trababa el scroll. Las visibles son un puñado.
+    document.querySelectorAll('.page.in').forEach(p => {
       const d = Math.abs(p.getBoundingClientRect().top - stage.top - 20);
       if (d < bd) { bd = d; best = +p.dataset.i; }
     });
     return best;
   }
   function applyZoom() {
-    document.querySelectorAll('.page').forEach(p => p.style.maxWidth = (880 * zoom) + 'px');
+    // el ancho se aplica al contenedor, no página a página: con 1000 páginas
+    // recorrerlas en cada pulsación de zoom congelaba el lector.
+    $('#pages').style.setProperty('--ancho', (880 * zoom) + 'px');
     $('#zoomLabel').textContent = Math.round(zoom * 100) + '%';
   }
 
@@ -1790,6 +1993,8 @@ const World = (() => {
     try {
       const r = await fetch('temporadas.json?t=' + Date.now());
       if (r.ok) REMOTE = await r.json();
+      // el panel publica aquí el dominio de R2: así el front lo aprende solo
+      if (REMOTE._r2) R2_BASE = String(REMOTE._r2).replace(/\/+$/, '');
     } catch (e) { REMOTE = {}; }
 
     $('#startBtn').textContent = 'BUSCANDO PÁGINAS…';
@@ -1872,8 +2077,9 @@ const World = (() => {
   $('#readerBack').onclick = () => { closeReader(); SimzAudio.sfxSelect(); };
   $('#shopBack').onclick = () => { closeShop(); SimzAudio.sfxSelect(); };
   $('#unlockOk').onclick = afterUnlock;
-  $('#prevPage').onclick = () => scrollToPage(Math.max(0, currentPageIndex() - 1));
-  $('#nextPage').onclick = () => scrollToPage(Math.min(current.pageCount - 1, currentPageIndex() + 1));
+  // los botones de abajo saltan de TANDA en tanda (10 páginas), no de una en una
+  $('#prevPage').onclick = () => { if (current) renderTanda(tanda - 1); };
+  $('#nextPage').onclick = () => { if (current) renderTanda(tanda + 1); };
   $('#zoomIn').onclick = () => { zoom = Math.min(2.5, zoom + .15); applyZoom(); };
   $('#zoomOut').onclick = () => { zoom = Math.max(.5, zoom - .15); applyZoom(); };
   $('#adminSave').onclick = saveAdmin;

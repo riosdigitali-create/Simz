@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#120a1f">
+<title>PERSONAJES · MUNDO SIMZ</title>
+<meta name="description" content="Los personajes que llegan a las próximas temporadas del Mundo Simz.">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Bangers&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#ffd23f;--gold2:#ff9f1c;--cyan:#3fd0ff;--pink:#ff3cb0;--red:#ff3b3b;
+  --pix:'Press Start 2P','Courier New',monospace;--toon:'Bangers',Impact,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{min-height:100%;background:#120a1f;color:#fff;font-family:var(--pix);overflow-x:hidden}
+.bg{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(circle at 50% 0%,rgba(63,208,255,.22),transparent 55%),
+             repeating-linear-gradient(90deg,#1b1030 0 40px,#170e2a 40px 80px)}
+.bg:after{content:"";position:absolute;inset:0;opacity:.5;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.35) 0 2px,transparent 2px 5px)}
+.wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:20px 16px 70px}
+
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:26px;flex-wrap:wrap}
+.pixbtn{font-family:var(--pix);font-size:10px;letter-spacing:1px;color:#2b1600;cursor:pointer;border:0;
+  background:linear-gradient(180deg,var(--gold),var(--gold2));padding:12px 16px;
+  box-shadow:0 0 0 3px #2b1600,0 5px 0 0 #a35d00,0 5px 0 3px #2b1600;text-decoration:none;display:inline-block}
+.pixbtn:active{transform:translateY(3px);box-shadow:0 0 0 3px #2b1600,0 2px 0 0 #a35d00,0 2px 0 3px #2b1600}
+.pixbtn.ghost{background:linear-gradient(180deg,#3a4bb5,#222b6e);color:#fff;
+  box-shadow:0 0 0 3px #0b0f2a,0 5px 0 0 #131a52,0 5px 0 3px #0b0f2a}
+
+.head{text-align:center;margin-bottom:30px}
+.head h1{font-family:var(--toon);font-size:clamp(38px,10vw,84px);letter-spacing:3px;line-height:1;
+  text-shadow:0 0 12px var(--cyan),0 0 34px var(--cyan),0 5px 0 #063648}
+.head h1 span{color:var(--pink);text-shadow:0 0 12px var(--pink),0 0 34px var(--pink),0 5px 0 #4a0b33}
+.head p{font-size:9px;color:#bfe6ff;margin-top:14px;line-height:2;padding:0 6px}
+
+/* Las postales llegan con su marco YA incluido en la imagen (color, nombre y
+   año vienen quemados desde el diseño). Por eso aquí no se pinta ningún marco:
+   solo se coloca la imagen entera y se deja respirar. Añadir un borde propio
+   daría marco sobre marco. */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:22px}
+.card{position:relative;cursor:pointer;border-radius:4px;overflow:hidden;background:#0b0f2a;
+  aspect-ratio:27/32;transform:rotate(var(--tilt,0deg));transition:transform .18s,box-shadow .18s;
+  box-shadow:0 8px 22px rgba(0,0,0,.55)}
+.card:hover,.card:focus-visible{transform:rotate(0deg) translateY(-8px) scale(1.03);
+  box-shadow:0 18px 40px rgba(0,0,0,.7),0 0 0 3px var(--cyan);outline:none;z-index:2}
+.card img{width:100%;height:100%;object-fit:cover;display:block}
+.card.ph{display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#2b2050,#150e2b);border:3px dashed #ffd23f44}
+.card.ph .q{font-family:var(--toon);font-size:64px;color:#ffd23f55}
+
+/* Visor: la postal a pantalla completa, sin nada más. */
+.viewer{position:fixed;inset:0;z-index:20;background:rgba(6,8,20,.94);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;padding:24px}
+.viewer img{max-width:100%;max-height:100%;object-fit:contain;border-radius:4px;
+  box-shadow:0 20px 60px rgba(0,0,0,.8)}
+.viewer .x{position:absolute;top:16px;right:16px;font-family:var(--pix);font-size:12px;color:#fff;
+  background:#0b0f2a;border:2px solid var(--cyan);border-radius:4px;padding:10px 13px;cursor:pointer}
+.viewer .nav{position:absolute;top:50%;transform:translateY(-50%);font-family:var(--pix);font-size:14px;
+  color:#fff;background:#0b0f2acc;border:2px solid var(--cyan);border-radius:4px;padding:14px 12px;cursor:pointer}
+.viewer .nav.prev{left:12px}.viewer .nav.next{right:12px}
+
+.neon{text-align:center;margin-top:30px;font-size:9px;letter-spacing:3px;color:#6ee7ff;
+  text-shadow:0 0 10px var(--cyan);animation:neon 2.6s infinite;line-height:2}
+@keyframes neon{0%,100%{opacity:1}50%{opacity:.45}}
+.hidden{display:none}
+@media(max-width:640px){
+  .grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .head p{font-size:8px}
+  .neon{font-size:7px;letter-spacing:2px}
+  .viewer{padding:10px}
+  .viewer .nav{padding:10px 8px;font-size:12px}
+}
+@media(max-width:360px){.grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){
+  .card{transform:none;transition:none}
+  .card:hover{transform:none}
+  .neon{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+
+<div class="wrap">
+  <div class="topbar">
+    <a class="pixbtn ghost" href="index.html">◀ VOLVER AL MAPA</a>
+    <a class="pixbtn" href="tienda.html">🛒 TIENDA</a>
+  </div>
+
+  <div class="head">
+    <h1>PERSO<span>NAJES</span></h1>
+    <p id="intro">Los rostros que llegan al Mundo Simz en las próximas temporadas.</p>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="neon">PRÓXIMAMENTE EN EL MUNDO SIMZ</div>
+</div>
+
+<div id="viewer" class="viewer hidden">
+  <button class="x" id="vx" aria-label="Cerrar">✕ CERRAR</button>
+  <button class="nav prev" id="vprev" aria-label="Anterior">◀</button>
+  <img id="vimg" src="" alt="">
+  <button class="nav next" id="vnext" aria-label="Siguiente">▶</button>
+</div>
+
+<script>
+/* Si personajes.json no existe todavía (primer despliegue), se pintan huecos
+   con interrogación en vez de una página vacía. */
+const DEFAULTS = {
+  intro: 'Los rostros que llegan al Mundo Simz en las próximas temporadas.',
+  items: []
+};
+const HUECOS = 8;
+
+/* El dominio de R2 viaja DENTRO de personajes.json (clave `_r2`), igual que en
+   temporadas.json: se configura en un solo sitio (la variable R2_PUBLIC_URL de
+   Cloudflare) y la web lo aprende de ahí. Si no hay `_r2`, todo se sirve del
+   propio sitio, así que la página nunca se rompe por esto. */
+let R2_BASE = '';
+const esDeR2 = p => /^personaje-\d{4}\.[a-z]+$/i.test(String(p));
+const urlDe  = p => (esDeR2(p) && R2_BASE) ? `${R2_BASE}/${encodeURIComponent(p)}` : p;
+
+let ITEMS = [];   // solo las que tienen imagen: son las que el visor recorre
+let idx = 0;
+
+const $ = s => document.querySelector(s);
+
+function abrir(i) {
+  if (!ITEMS.length) return;
+  idx = (i + ITEMS.length) % ITEMS.length;
+  const it = ITEMS[idx];
+  $('#vimg').src = urlDe(it.image);
+  $('#vimg').alt = it.name || 'Personaje';
+  $('#viewer').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function cerrar() {
+  $('#viewer').classList.add('hidden');
+  $('#vimg').src = '';
+  document.body.style.overflow = '';
+}
+
+$('#vx').onclick = cerrar;
+$('#vprev').onclick = e => { e.stopPropagation(); abrir(idx - 1); };
+$('#vnext').onclick = e => { e.stopPropagation(); abrir(idx + 1); };
+$('#viewer').onclick = e => { if (e.target.id === 'viewer') cerrar(); };
+document.addEventListener('keydown', e => {
+  if ($('#viewer').classList.contains('hidden')) return;
+  if (e.key === 'Escape') cerrar();
+  if (e.key === 'ArrowLeft') abrir(idx - 1);
+  if (e.key === 'ArrowRight') abrir(idx + 1);
+});
+
+function render(data) {
+  if (data && data._r2) R2_BASE = String(data._r2).replace(/\/+$/, '');
+  $('#intro').textContent = (data && data.intro) || DEFAULTS.intro;
+
+  const todas = (data && Array.isArray(data.items) ? data.items : []).filter(it => it && it.image);
+  ITEMS = todas;
+
+  const g = $('#grid');
+  g.innerHTML = '';
+  const frag = document.createDocumentFragment();
+
+  todas.forEach((it, i) => {
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.tabIndex = 0;
+    d.setAttribute('role', 'button');
+    // inclinación leve y estable por posición: da aire de postales sueltas
+    // sobre una mesa sin que salten de sitio en cada recarga.
+    d.style.setProperty('--tilt', ((i % 4) - 1.5).toFixed(2) + 'deg');
+    const im = new Image();
+    im.src = urlDe(it.image);
+    im.alt = it.name || 'Personaje';
+    im.loading = 'lazy';       // con muchas postales, solo baja las visibles
+    im.decoding = 'async';
+    d.appendChild(im);
+    d.onclick = () => abrir(i);
+    d.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(i); } };
+    frag.appendChild(d);
+  });
+
+  // huecos: solo mientras no haya ninguna postal publicada
+  if (!todas.length) {
+    for (let i = 0; i < HUECOS; i++) {
+      const d = document.createElement('div');
+      d.className = 'card ph';
+      d.innerHTML = '<div class="q">?</div>';
+      frag.appendChild(d);
+    }
+  }
+
+  g.appendChild(frag);
+}
+
+fetch('personajes.json?t=' + Date.now())
+  .then(r => r.ok ? r.json() : DEFAULTS)
+  .catch(() => DEFAULTS)
+  .then(render)
+  .catch(() => render(DEFAULTS));
+</script>
+</body>
+</html>

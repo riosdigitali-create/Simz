@@ -72,7 +72,7 @@ img{image-rendering:pixelated}
 <div class="wrap">
   <div class="topbar">
     <a class="pixbtn ghost" href="index.html">◀ VOLVER AL MAPA</a>
-    <a class="pixbtn" href="admin.html">⚙ ADMIN</a>
+    <a class="pixbtn" href="personajes.html">🎭 PERSONAJES</a>
   </div>
 
   <div class="head">
@@ -119,7 +119,7 @@ function render(data) {
   });
 }
 
-// productos.json lo genera el panel de administración; si no existe, se usan los 6 por defecto
+// productos.json lo genera el panel de administración; si no existe, se usan los DEFAULTS
 fetch('productos.json?t=' + Date.now())
   .then(r => r.ok ? r.json() : DEFAULTS)
   .catch(() => DEFAULTS)
