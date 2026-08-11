@@ -85,6 +85,26 @@ img{image-rendering:pixelated}
 .dpad:active{background:var(--gold);color:#2b1600}
 @media (hover:none) and (pointer:coarse){#touchpad{display:flex}}
 
+/* ---------- contador de visitas (ojito) ---------- */
+#visitas{position:fixed;left:12px;top:64px;z-index:11;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,.5));animation:visPop .5s ease}
+@keyframes visPop{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+#visitas .eye{width:62px;height:36px;border-radius:50%;background:#fff;position:relative;
+  border:3px solid #0b0f2a;box-shadow:inset 0 -3px 0 rgba(0,0,0,.12)}
+#visitas .eye::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#3fd0ff 0 40%,#123a52 42%,#061826 100%)}
+#visitas .eye::after{content:"";position:absolute;left:57%;top:34%;width:5px;height:5px;border-radius:50%;background:#fff}
+#visitas .eye.blink{height:6px;background:#0b0f2a}
+#visitas .eye.blink::before,#visitas .eye.blink::after{display:none}
+#visitas .bub{background:#fff;color:#123;border:3px solid #0b0f2a;border-radius:10px;
+  padding:5px 9px 6px;text-align:center;line-height:1.35;position:relative;max-width:150px}
+#visitas .bub::before{content:"";position:absolute;left:50%;top:-9px;transform:translateX(-50%);
+  border:6px solid transparent;border-bottom-color:#0b0f2a}
+#visitas .bub .lbl{font-size:7px;color:#3a3f5a;letter-spacing:.5px;display:block}
+#visitas .bub .num{font-size:15px;color:#c47f0a;margin-top:2px;display:block}
+@media (max-width:520px){#visitas .eye{width:52px;height:30px}#visitas .bub{max-width:130px}#visitas .bub .num{font-size:13px}}
+
 /* ---------- panel temporadas ---------- */
 .panel{position:fixed;top:0;right:0;bottom:0;width:min(380px,88vw);z-index:20;
   background:linear-gradient(180deg,#141a44,#0b0f2a);border-left:4px solid var(--gold);
@@ -335,6 +355,12 @@ img{image-rendering:pixelated}
       <button class="iconbtn" id="btnSeasons" title="Temporadas">☰</button>
       <a class="iconbtn admin-link" href="admin.html" title="Panel de administración" style="text-decoration:none">⚙</a>
     </div>
+  </div>
+
+  <!-- Contador de visitas con ojito -->
+  <div id="visitas" title="Visitas totales">
+    <div class="eye" id="visEye"></div>
+    <div class="bub"><span class="lbl">JUGADORES QUE<br>HAN LEÍDO</span><span class="num" id="visNum">···</span></div>
   </div>
 
   <!-- Cartel flotante del nivel bajo el cursor -->
@@ -643,6 +669,19 @@ const World = (() => {
 
   const clouds = [], cars = [], birds = [], ufos = [], lamps = [], structures = [], trees = [], stars = [];
 
+  /* ---------- espectaculares (billboards de personajes) ----------
+     Lo que va aquí son las TARJETAS de personajes del Mundo Simz (las postales
+     que el panel publica en personajes.json y que se ven en personajes.html).
+     SOLO esas: nunca se rellenan con los recortes de Mexa Cartoon. Si todavía
+     no hay ninguna publicada, el panel queda con un "?" de próximamente.
+     setBillboards() las carga en caliente desde el arranque. */
+  const mkBillImg = (src, card) => {
+    const im = new Image(); im.ok = false; im.card = !!card;
+    im.onload = () => im.ok = true; im.src = src; return im;
+  };
+  let billImgs = [];
+  const easeIO = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+
   /* banda de cielo visible (se adapta a la altura de la pantalla) */
   const skyTop = () => -camY + 6;
   const skyY = yr => skyTop() + yr * Math.max(60, (GROUND - 66) - skyTop());
@@ -681,6 +720,8 @@ const World = (() => {
       { x: 3280, type: 'school', w: 130 },
       { x: 3600, type: 'shops', w: 130 }
     ];
+    // espectaculares de personajes repartidos por la calle (con desfase para que no vayan sincronizados)
+    [340, 990, 1660, 2380, 3060, 3520].forEach((bx, i) => landmarks.push({ x: bx, type: 'billboard', w: 74, phase: i * 0.37 }));
     landmarks.forEach(l => structures.push(l));
 
     let x = 20;
@@ -850,6 +891,68 @@ const World = (() => {
     label(x + w / 2, y + 26, 'TIENDA SIMZ', lit ? '#ff6ec7' : '#c0468f');
     label(x + w / 2, y + 4, '★', '#ffd23f');
   }
+  /* ---------- espectacular (billboard con personajes que se deslizan) ---------- */
+  function drawBillImg(im, bx, by, bw, bh) {
+    if (!im || !im.ok) { P((bx + bw * 0.28) | 0, (by + bh * 0.22) | 0, (bw * 0.44) | 0, (bh * 0.7) | 0, '#0d1330'); return; }
+    ctx.imageSmoothingEnabled = true;
+    if (im.card) {
+      /* Las tarjetas ya traen su propio marco, nombre y color quemados en la
+         imagen: se pintan llenando el panel (el clip recorta lo que sobre) para
+         que se lean como una postal pegada al espectacular, sin marco doble.
+         Se ajustan completas (sin recortar) para no comerse su propio marco. */
+      const sc = Math.min(bw / im.width, bh / im.height);
+      const dw = im.width * sc, dh = im.height * sc;
+      ctx.drawImage(im, (bx + (bw - dw) / 2) | 0, (by + (bh - dh) / 2) | 0, Math.ceil(dw), Math.ceil(dh));
+    } else {
+      const pad = 5, availH = bh - pad * 2, availW = bw - pad * 2;
+      let dh = availH, dw = dh * (im.width / im.height);
+      if (dw > availW) { dw = availW; dh = dw * (im.height / im.width); }
+      const dx = bx + (bw - dw) / 2, dy = by + bh - pad - dh;
+      ctx.drawImage(im, dx | 0, dy | 0, dw | 0, dh | 0);
+    }
+    ctx.imageSmoothingEnabled = false;
+  }
+  function drawBillboard(s, lit) {
+    const w = s.w || 74, cx = s.x + w / 2;
+    const panelW = 64, panelH = 80, postH = 58;
+    const px = (cx - panelW / 2) | 0, py = (GROUND - postH - panelH) | 0;
+    // postes
+    P(px + 8, GROUND - postH, 5, postH, '#4a4558');
+    P(px + panelW - 13, GROUND - postH, 5, postH, '#4a4558');
+    P(px + 6, GROUND - postH + 18, panelW - 12, 4, '#3a3550');
+    // marco
+    P(px - 5, py - 5, panelW + 10, panelH + 10, '#141024');
+    P(px - 3, py - 3, panelW + 6, panelH + 6, lit ? '#ffd23f' : '#c9a63a');
+    P(px, py, panelW, panelH, '#12183a');
+    // sin tarjetas publicadas: panel de "próximamente", nunca personajes de Mexa
+    if (!billImgs.length) {
+      ctx.font = '18px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = lit ? '#3a4275' : '#2a3160';
+      ctx.fillText('?', cx, py + panelH / 2 + 8);
+      ctx.textAlign = 'left';
+      for (let i = 4; i < panelW - 2; i += 10) P(px + i, py - 4, 4, 4, (Math.floor(time * 4) + i) % 20 < 10 ? '#ffe27a' : '#ff9f1c');
+      label(cx, py + panelH + 13, '★ PERSONAJES ★', lit ? '#ff6ec7' : '#c0468f');
+      if (lit) glow(cx, py + panelH / 2, 42, '#3fd0ff');
+      return;
+    }
+    // personajes deslizándose
+    const per = 4.2, slideFrac = 0.16;
+    const tt = time / per + (s.phase || 0);
+    const idx = Math.floor(tt) % billImgs.length, nxt = (idx + 1) % billImgs.length;
+    const frac = tt - Math.floor(tt);
+    let k = 0; if (frac > 1 - slideFrac) k = easeIO((frac - (1 - slideFrac)) / slideFrac);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(px, py, panelW, panelH); ctx.clip();
+    drawBillImg(billImgs[idx], px - k * panelW, py, panelW, panelH);
+    if (k > 0) drawBillImg(billImgs[nxt], px + (1 - k) * panelW, py, panelW, panelH);
+    ctx.restore();
+    // foquitos del marco
+    for (let i = 4; i < panelW - 2; i += 10) P(px + i, py - 4, 4, 4, (Math.floor(time * 4) + i) % 20 < 10 ? '#ffe27a' : '#ff9f1c');
+    label(cx, py + panelH + 13, '★ PERSONAJES ★', lit ? '#ff6ec7' : '#c0468f');
+    if (lit) glow(cx, py + panelH / 2, 42, '#3fd0ff');
+  }
+
   function drawTree(x, s) {
     P(x - 2, GROUND - 14 * s, 4, 14 * s, '#6b4423');
     P(x - 11 * s, GROUND - 30 * s, 22 * s, 12 * s, '#2f7a3f');
@@ -1200,7 +1303,7 @@ const World = (() => {
     structures.forEach(st => {
       if (st.x + (st.w || 90) < camX - 40 || st.x > camX + W) return;
       ({ house: drawHouse, school: drawSchool, park: drawPark, gas: drawGas, diner: drawDiner,
-         shops: drawShops, tavern: drawTavern, market: drawMarket, simz: drawSimz }[st.type] || (() => {}))(st, lit);
+         shops: drawShops, tavern: drawTavern, market: drawMarket, simz: drawSimz, billboard: drawBillboard }[st.type] || (() => {}))(st, lit);
     });
 
     trees.forEach(t => {
@@ -1384,6 +1487,13 @@ const World = (() => {
       window.addEventListener('keyup', e => { keys[e.key] = false; });
 
       requestAnimationFrame(ts => { last = ts; update(ts); });
+    },
+
+    /* Carga las tarjetas de personajes en los espectaculares. Recibe rutas ya
+       resueltas (R2 o del propio sitio). Con lista vacía los paneles muestran
+       el "?" de próximamente en lugar de personajes de otra serie. */
+    setBillboards(srcs) {
+      billImgs = (srcs || []).filter(Boolean).slice(0, 12).map(s => mkBillImg(s, true));
     },
 
     setSeasons(list) { seasons = list; },
@@ -2001,6 +2111,24 @@ const World = (() => {
       if (REMOTE._r2) R2_BASE = String(REMOTE._r2).replace(/\/+$/, '');
     } catch (e) { REMOTE = {}; }
 
+    /* Los espectaculares de la ciudad muestran las TARJETAS de personajes del
+       Mundo Simz, las mismas que publica el panel y que se ven en
+       personajes.html. Si todavía no hay ninguna, quedan los recortes de
+       /assets. Sin bloquear el arranque: si falla, la ciudad entra igual. */
+    fetch('personajes.json?t=' + Date.now())
+      .then(r => r.ok ? r.json() : null)
+      .then(pj => {
+        if (!pj || !Array.isArray(pj.items)) return;
+        const base = pj._r2 ? String(pj._r2).replace(/\/+$/, '') : R2_BASE;
+        // las postales viven en R2 con nombre personaje-0007.webp (4 dígitos)
+        const esPostal = p => /^personaje-\d{4}\.[a-z]+$/i.test(String(p));
+        const srcs = pj.items
+          .filter(it => it && it.image)
+          .map(it => (esPostal(it.image) && base) ? `${base}/${encodeURIComponent(it.image)}` : it.image);
+        if (srcs.length) World.setBillboards(srcs);
+      })
+      .catch(() => {});
+
     $('#startBtn').textContent = 'BUSCANDO PÁGINAS…';
     $('#startBtn').disabled = true;
     STATE.seasons = await Promise.race([
@@ -2126,5 +2254,42 @@ const World = (() => {
 .ziv-credito:hover{opacity:1;color:var(--gold,#ffd23f)}
 @media(max-width:640px){.ziv-credito{font-size:7px;padding:3px 6px;bottom:4px;right:6px}}
 </style>
+
+<!-- ============ CONTADOR DE VISITAS (ojito, compartido entre las dos páginas) ============ -->
+<script>
+(function(){
+  /* Contador global de visitas. Suma UNA vez por pestaña abierta y muestra el
+     total combinado de las dos páginas (Mundo Simz + México). Servicio gratuito
+     Abacus (sin registro, sin backend). Para usar tu propio backend, cambia
+     HIT_URL/GET_URL por los tuyos y deja que devuelvan {"value": N}. */
+  var NS='mundosimz-rios', KEY='total';
+  var BASE=300;   // arranque base (respeta las visitas que ya traía la página). El total real se SUMA a esto.
+  var HIT_URL='https://abacus.jasoncameron.dev/hit/'+NS+'/'+KEY;   // suma +1 y devuelve el total
+  var GET_URL='https://abacus.jasoncameron.dev/get/'+NS+'/'+KEY;   // solo lee, sin sumar
+  var numEl=document.getElementById('visNum'), eyeEl=document.getElementById('visEye');
+  if(!numEl) return;
+
+  function fmt(n){return (n||0).toLocaleString('es-MX');}
+  function pintar(n){numEl.textContent=fmt((n||0)+BASE);}
+
+  // el ojito parpadea de vez en cuando
+  if(eyeEl) setInterval(function(){ if(Math.random()<0.5){eyeEl.classList.add('blink');setTimeout(function(){eyeEl.classList.remove('blink');},140);} },2600);
+
+  // fallback local por si el servicio no responde (nunca se ve "roto")
+  var LK='mundosimz.visitas.fallback';
+  function localBump(){var n=(parseInt(localStorage.getItem(LK)||'0',10)||0);
+    if(!sessionStorage.getItem('vis.contado')){n++;localStorage.setItem(LK,n);sessionStorage.setItem('vis.contado','1');}
+    return n;}
+
+  // suma solo una vez por pestaña; en recargas de la misma sesión solo lee
+  var yaContado=sessionStorage.getItem('vis.contado');
+  var url=yaContado?GET_URL:HIT_URL;
+  fetch(url,{cache:'no-store'})
+    .then(function(r){return r.json();})
+    .then(function(d){ var n=(d&&(d.value!=null?d.value:d.count)); if(n==null) throw 0;
+      sessionStorage.setItem('vis.contado','1'); pintar(n); })
+    .catch(function(){ pintar(localBump()); });
+})();
+</script>
 </body>
 </html>
